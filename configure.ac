@@ -170,16 +170,24 @@ AM_CONDITIONAL(HAVE_NETLINK, [ test x"$HAVE_NETLINK" = xyes ])
 #
 # Check for net/route.h
 #
-AC_CHECK_HEADER(net/route.h,
-HAVE_PF_ROUTE=yes
-AC_DEFINE([HAVE_PF_ROUTE],[],[Support for PF_ROUTE])
-, [], [
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <net/if_dl.h>
-])
+if test "x$TARGET_HAIKU" = "xno" ; then
+    AC_CHECK_HEADER(net/route.h,
+    HAVE_PF_ROUTE=yes
+    AC_DEFINE([HAVE_PF_ROUTE],[],[Support for PF_ROUTE])
+    , [], [
+    #include <sys/types.h>
+    #include <sys/socket.h>
+    #include <net/if_dl.h>
+    ])
+fi
 
 AM_CONDITIONAL(HAVE_PF_ROUTE, [ test x"$HAVE_PF_ROUTE" = xyes ])
+
+
+# Check for Haiku
+if test "x$TARGET_HAIKU" = "xyes" ; then
+	LDFLAGS="$LDFLAGS -lnet"
+fi
 
 #
 # Check for sys/filio.h; needed for FIONREAD on Solaris
@@ -252,7 +260,7 @@ AC_TRY_COMPILE([#include <netinet/in.h>], [
 #
 # Detecting the linux distribution for specific things like init scripts.
 #
-AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO],[Specify the distribution to target: One of lfs, debian, gentoo, archlinux, fedora, mandriva, darwin, netbsd, freebsd, slackware or none]))
+AC_ARG_WITH(distro, AS_HELP_STRING([--with-distro=DISTRO],[Specify the distribution to target: One of lfs, debian, gentoo, archlinux, fedora, mandriva, darwin, netbsd, freebsd, haiku, slackware or none]))
 if test "z$with_distro" = "z"; then
     if test "$cross_compiling" = yes; then
         AC_MSG_WARN([Target distribution cannot be reliably detected when cross-compiling. You should specify it with --with-distro (see $0 --help for recognized distros)])
@@ -275,7 +283,7 @@ with_distro=`echo ${with_distro} | tr '[[:upper:]]' '[[:lower:]]' `
 case $with_distro in
     lfs|debian|gentoo|archlinux|suse|fedora|mandriva|darwin|freebsd|slackware|none)
      ;;
-    netbsd)
+    netbsd|haiku)
      AC_MSG_WARN([Your distribution (${with_distro}) is supported but no init script exist yet! (patches welcome)])
      ;;
     linux)
@@ -297,6 +305,7 @@ AM_CONDITIONAL(TARGET_DARWIN, test x"$with_distro" = xdarwin)
 AM_CONDITIONAL(TARGET_NETBSD, test x"$with_distro" = xnetbsd)
 AM_CONDITIONAL(TARGET_FREEBSD, test x"$with_distro" = xfreebsd)
 AM_CONDITIONAL(TARGET_SLACKWARE, test x"$with_distro" = xslackware)
+AM_CONDITIONAL(TARGET_HAIKU, test x"$with_distro" = xhaiku)
 
 test_gcc_flag() {
     AC_LANG_CONFTEST([int main(void) {}])
